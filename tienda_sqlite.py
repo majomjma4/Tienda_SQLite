@@ -49,25 +49,26 @@ def ver_catalogo():
             print(f"{codigo} | {nombre} | ${precio:.2f} | {stock} ")
       
 def agregar_producto():
-    codigo = input("Ingrese el código del producto: ").strip().upper()
-    if not codigo: print("Código inválido o existente "); return
+    producto = input("Ingrese el producto en el formato (codigo, nombre, precio, stock): ").strip()
+    # if not codigo: print("Código inválido o existente "); return
+    try:
+        codigo, nombre, precio, stock = [x.strip() for x in producto.split(',')]
+        codigo = codigo.upper()
+        precio = float(precio)
+        stock = int(stock)
+        
+        if not codigo or not nombre or precio <= 0 or stock <0:
+            raise ValueError
+    except Exception:
+        print("Formato incorrecto. Use: codigo, nombre, precio, stock")
+        return
     
     with conectar() as conn:
         c = conn.cursor()
         c.execute("SELECT 1 FROM catalogo WHERE codigo =?", (codigo,))
         if c.fetchone(): print("Código existente. "); return
          
-        nombre = input("Ingrese el nombre del producto: ").strip()
-        if not nombre: print("El nombre no puede estar vacío."); return
-        
-        try:
-            precio = float(input("Ingrese el precio del producto: ").strip())
-            stock = int(input("Ingrese la cantidad de producto en stock: ").strip())
-            if precio <= 0 or stock < 0: raise ValueError
-            
-        except ValueError: print("Datos inválidos. Precio debe ser > 0 y stock >= 0 "); return
-        c.execute("INSERT INTO catalogo VALUES (?,?,?,?)",
-                 (codigo, nombre, precio, stock))
+        c.execute("INSERT INTO catalogo VALUES (?,?,?,?)", (codigo, nombre, precio, stock))
         conn.commit()
         print(f"Producto {nombre} agregado al catálogo.")
        
