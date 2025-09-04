@@ -37,57 +37,39 @@ def inicializar_bd():
                 )""")
         
         conn.commit()
-
-def leer_archivo(nombre_archivo):
-    if not os.path.exists(nombre_archivo):
-        open(nombre_archivo, 'w', encoding='utf-8').close()
-    with open(nombre_archivo, 'r', encoding = 'utf-8') as f: return f.readlines()
-    
-def escribir_archivo(nombre_archivo, lineas, modo ='w'):
-    with open(nombre_archivo, modo, encoding='utf-8') as f: f.writelines(lineas)
-
-def cargar_catalogo():
-    catalogo.clear()
-    for linea in leer_archivo(CATALOGO_FILE):
-        partes = linea.strip().split(",")
-        if len(partes) == 4:
-            try:
-                codigo, nombre, precio, stock = partes 
-                catalogo.append({
-                    'codigo': codigo.strip().upper(),
-                    'nombre': nombre.strip(),
-                    'precio': float(precio.strip()),
-                    'stock': int(stock.strip())
-                })
-            except ValueError:
-                continue
-
-def guardar_catalogo():
-    lineas = [f"{product['codigo']},{product['nombre']},{product['precio']},{product['stock']}\n" for product in catalogo]
-    escribir_archivo(CATALOGO_FILE, lineas)
-            
+  
 def ver_catalogo():
-        if not catalogo: print("Catálogo vació. "); return
-        
+    with conectar() as conn:
+        c = conn.cursor()
+        c.execute("SELECT codigo, nombre, precio, stock FROM catalogo")
+        productos = c.fetchall()
+        if not productos: print("Catálogo vació. "); return
         print("\n------ CATÁLOGO ------")
-        for product in catalogo:
-            print(f"{product['codigo']} | {product['nombre']} | ${product['precio']:.2f} | {product['stock']} ")
+        for codigo, nombre, precio, stock  in productos:
+            print(f"{'codigo'} | {'nombre'} | ${'precio':.2f} | {'stock'} ")
       
 def agregar_producto():
     codigo = input("Ingrese el código del producto: ").strip().upper()
-    if not codigo or any(product['codigo'] == codigo for product in catalogo): print("Código inválido o existente "); return
-         
-    nombre = input("Ingrese el nombre del producto: ").strip()
-    if not nombre: print("El nombre no puede estar vacío."); return
+    if not codigo: print("Código inválido o existente "); return
     
-    try:
-        precio = float(input("Ingrese el precio del producto: ").strip())
-        stock = int(input("Ingrese la cantidad de producto en stock: ").strip())
-        if precio <= 0 or stock < 0: raise ValueError
+    with conectar() as conn:
+        c = conn.cursor()
+        c.execute("SELECT 1 FROM catalogo WHERE codigo =?", (codigo,))
+        if c.fetchone(): print("Código existente. "); return
+         
+        nombre = input("Ingrese el nombre del producto: ").strip()
+        if not nombre: print("El nombre no puede estar vacío."); return
         
-    except ValueError: print("Datos inválidos. Precio debe ser > 0 y stock >= 0 "); return
-    catalogo.append({'codigo': codigo,'nombre': nombre, 'precio': precio, 'stock': stock })
-    guardar_catalogo(); print(f"Producto {nombre} agregado al catálogo. ")
+        try:
+            precio = float(input("Ingrese el precio del producto: ").strip())
+            stock = int(input("Ingrese la cantidad de producto en stock: ").strip())
+            if precio <= 0 or stock < 0: raise ValueError
+            
+        except ValueError: print("Datos inválidos. Precio debe ser > 0 y stock >= 0 "); return
+        c.execute("INSERT INTO catalogo VALUES (?,?,?,?)",
+                 (codigo, nombre, precio, stock))
+        conn.commit()
+        print(f"Producto {nombre} agregado al catálogo.")
 
 def cargar_carrito():
     carrito.clear()
