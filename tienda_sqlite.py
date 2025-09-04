@@ -70,56 +70,50 @@ def agregar_producto():
                  (codigo, nombre, precio, stock))
         conn.commit()
         print(f"Producto {nombre} agregado al catálogo.")
-
-def cargar_carrito():
-    carrito.clear()
-    for linea in leer_archivo(CARRITO_FILE):
-        partes = linea.strip().split(',')
-        if len(partes)== 4:
-            try:
-                codigo,nombre,precio,cantidad = partes
-                carrito.append({
-                    'codigo': codigo.strip(),
-                    'nombre': nombre.strip(),
-                    'precio': float(precio.strip()),
-                    'cantidad': int(cantidad.strip())
-                })
-            except ValueError: 
-                continue
-            
-def guardar_carrito():
-    lineas = [f"{car['codigo']},{car['nombre']},{car['precio']},{car['cantidad']}\n" for car in carrito]
-    escribir_archivo(CARRITO_FILE, lineas)        
-
+       
 def agregar_carrito():
-    cargar_carrito()
     codigo = input("Ingrese el código del producto que desea agregar al carrito: ").strip().upper()
-    producto = next((product for product in catalogo if product['codigo'] == codigo), None)
-    if not producto: print("Producto no encontrado"); return
-    try: cantidad = int(input("Ingrese la cantidad a comprar: ").strip()); assert cantidad>0    
-    except: print("Cantidad inválida. Debe ser un número entero mayor a 0."); return
+    with conectar() as conn:
+        c = conn.cursor()
+        c.execute("SELECT nombre, precio, stock FROM catalogo WHERE codigo =?", (codigo,))
+        producto = c.fetchone()
+    
+        if not producto: 
+            print("Producto no encontrado")
+            return
+        nombre, precio, stock = producto
+            
+        try: cantidad = int(input("Ingrese la cantidad a comprar: ").strip()); assert cantidad>0    
+        except: print("Cantidad inválida. Debe ser un número entero mayor a 0."); return
+            
+        if cantidad > stock: print(f"Stock insuficiente. Disponible: {producto['stock']}"); return
         
-    if cantidad > producto['stock']: print(f"Stock insuficiente. Disponible: {producto['stock']}"); return
+        c.execute("SELECT cantidad FROM carrito WHERE codigo =?", (codigo,))
+        item = c.fetchone()
     
-    item = next((car for car in carrito if car['codigo'] == codigo), None)
-    if item: item['cantidad'] += cantidad
-    else: carrito.append({'codigo': producto['codigo'], 'nombre': producto['nombre'], 'precio': producto['precio'], 'cantidad': cantidad})
-    producto['stock'] -= cantidad
-    
-    guardar_catalogo(); guardar_carrito()
-    print(f"{cantidad} unidades de {producto['nombre']} ha sido agregado al carrito")
+        if item: 
+            c.execute("UPDATE carrito SET cantidad = cantidad +? WHERE codigo=?", (cantidad, codigo))
+        else:
+            c.execute("INSERT INTO carrito VALUES (?,?,?,?)", (codigo, nombre, precio, cantidad))
+        
+        c.execute("UPDATE catalogo SET stock = stock - ? WHERE codigo =?", (cantidad, codigo))
+        conn.commit()
+        print(f"{cantidad} unidades de {producto['nombre']} ha sido agregado al carrito")
        
 def ver_carrito():
-    cargar_carrito()             
-    if not carrito: print("Carrito vacío"); return
+    with conectar() as conn: 
+        c= conn.cursor()
+        c.execute("SELECT nombre, precio, cantidad FROM carrito")
+        carrito = c.fetchone()           
+        if not carrito: print("Carrito vacío"); return
         
-    total = 0
-    print("\n--- CARRITO DE COMPRAS --- ")
-    for car in carrito:
-        subtotal = car['precio'] * car['cantidad']
-        total += subtotal
-        print(f"{car['nombre']} x {car['cantidad']} = ${subtotal:.2f}")
-    print(f"Total: ${total:.2f}")
+        total = 0
+        print("\n--- CARRITO DE COMPRAS --- ")
+        for nombre, precio, cantidad in carrito:
+            subtotal = precio * cantidad
+            total += subtotal
+            print(f"{nombre} x {'cantidad'} = ${subtotal:.2f}")
+        print(f"Total: ${total:.2f}")
         
 def finalizar_compra():
     cargar_carrito()
