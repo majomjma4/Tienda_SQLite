@@ -41,11 +41,11 @@ def inicializar_bd():
 def ver_catalogo():
     with conectar() as conn:
         c = conn.cursor()
-        c.execute("SELECT codigo, nombre, precio, stock FROM catalogo")
+        c.execute("SELECT codigo, nombre, precio, stock FROM catalogo ORDER BY nombre")
         productos = c.fetchall()
-        if not productos: print("Catálogo vació. "); return
+        if not productos: print("Catálogo vacío."); return
         print("\n------ CATÁLOGO ------")
-        for codigo, nombre, precio, stock  in productos:
+        for codigo, nombre, precio, stock in productos:
             print(f"{codigo} | {nombre} | ${precio:.2f} | {stock} ")
       
 def agregar_producto():
@@ -96,14 +96,14 @@ def agregar_carrito():
         else:
             c.execute("INSERT INTO carrito VALUES (?,?,?,?)", (codigo, nombre, precio, cantidad))
         
-        c.execute("UPDATE catalogo SET stock = stock - ? WHERE codigo =?", (cantidad, codigo))
+        c.execute("UPDATE catalogo SET stock = stock -? WHERE codigo =?", (cantidad, codigo))
         conn.commit()
         print(f"{cantidad} unidades de {nombre} ha sido agregado al carrito")
        
 def ver_carrito():
     with conectar() as conn: 
         c= conn.cursor()
-        c.execute("SELECT nombre, precio, cantidad FROM carrito")
+        c.execute("SELECT nombre, precio, cantidad FROM carrito ORDER BY nombre")
         carrito = c.fetchall()           
         if not carrito: print("Carrito vacío"); return
         
@@ -149,7 +149,7 @@ def finalizar_compra():
 def ver_ventas():
     with conectar() as conn:
         c = conn.cursor()
-        c.execute("SELECT ticket FROM ventas")
+        c.execute("SELECT ticket FROM ventas ORDER BY fecha DESC")
         ventas = c.fetchall()
         if not ventas: print("No hay ventas registradas"); return
         opcion = input("Desea ver todas las ventas o buscar una venta especifica? (todas/buscar): ").strip().lower()
