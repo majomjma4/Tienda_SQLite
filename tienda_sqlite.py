@@ -50,7 +50,6 @@ def ver_catalogo():
       
 def agregar_producto():
     producto = input("Ingrese el producto en el formato (codigo, nombre, precio, stock): ").strip()
-    # if not codigo: print("Código inválido o existente "); return
     try:
         codigo, nombre, precio, stock = [x.strip() for x in producto.split(',')]
         codigo = codigo.upper()
