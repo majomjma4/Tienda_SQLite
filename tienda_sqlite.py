@@ -157,11 +157,14 @@ def ver_ventas():
             for v in ventas: print(v[0])
         elif opcion == "buscar":
             search = input("Ingrese la palabra clave para buscar (producto o fecha): ").strip().lower()
-            for v in ventas:
-                if search in v[0].lower():
-                    print(v[0])  
+            resultados = [v[0] for v in ventas if search in v[0].lower()]
+                    
+            if resultados:
+                for r in resultados: print(r)  
+            else:
+                print(f"No se encontraron ventas que coincidad con '{search}'")
         else:
-            print("Opción inválida")
+            print("Opción inválida. Por favor ingrese 'todas' o 'buscar'")
     
 if __name__=="__main__":
     inicializar_bd()
