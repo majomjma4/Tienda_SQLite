@@ -73,7 +73,27 @@ def agregar_producto():
         c.execute("INSERT INTO catalogo VALUES (?,?,?,?)", (codigo, nombre, precio, stock))
         conn.commit()
         print(f"Producto {nombre} agregado al catálogo.")
+        
+def actualizar_stock():
+    codigo = input("Ingrese el código del producto que desea rellenar: ").strip().upper()
        
+    with conectar() as conn:
+        c= conn.cursor()
+        c.execute("SELECT nombre, stock FROM catalogo WHERE codigo =?",(codigo,))   
+        producto = c.fetchone()
+        
+        if not producto: print("Producto no encontrado."); return
+        nombre, stock_actual = producto
+        
+        try: 
+            cantidad = int(input(f"Ingrese la cantidad a agregar al stock de {nombre}: ").strip())
+            if cantidad <=0: print("Ingrese un número positivo. "); return
+        except ValueError: print("Cantidad inválida"); return
+        
+        nuevo_stock = stock_actual + cantidad
+        c.execute("UPDATE catalogo SET stock =? WHERE codigo =?", (nuevo_stock, codigo))
+        conn.commit()
+        print(f"Stock actualizado. {nombre} ahora tiene {nuevo_stock} unidades. ")
 def agregar_carrito():
     codigo = input("Ingrese el código del producto que desea agregar al carrito: ").strip().upper()
     with conectar() as conn:
@@ -163,7 +183,7 @@ def ver_ventas():
             resultados = [v[0] for v in ventas if search in v[0].lower()]
                     
             if resultados:
-                for r in resultados: print(r)  
+                for r in resultados: print(r)   
             else:
                 print(f"No se encontraron ventas que coincidad con '{search}'")
         else:
@@ -180,6 +200,7 @@ if __name__=="__main__":
     4. Finalizar compra
     5. Ver ventas
     6. Agregar Producto 
+    7. Actualizar Stock
     0. Salir
     \n""")
         opcion = input("\nIngrese la opción: ").strip()
@@ -189,5 +210,6 @@ if __name__=="__main__":
         elif opcion == "4": finalizar_compra()
         elif opcion == "5": ver_ventas()
         elif opcion == "6": agregar_producto()
+        elif opcion == "7": actualizar_stock()
         elif opcion == "0": print("¡Gracias por preferirnos! Hasta luego"); break
         else: print("Opción inválida")
