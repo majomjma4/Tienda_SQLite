@@ -44,9 +44,12 @@ def ver_catalogo():
         c.execute("SELECT codigo, nombre, precio, stock FROM catalogo ORDER BY nombre")
         productos = c.fetchall()
         if not productos: print("Catálogo vacío."); return
-        print("\n------ CATÁLOGO ------")
+        
+        print("\n------------------------- CATÁLOGO -------------------------\n")
+        print(f"{'CODIGO':<15} {'NOMBRE':<16} {'PRECIO':<13} {'STOCK':>10}")
+        print("-"*60)
         for codigo, nombre, precio, stock in productos:
-            print(f"{codigo} | {nombre} | ${precio:.2f} | {stock} ")
+            print(f"{codigo:<10} | {nombre:<15} | ${precio:>10.2f} | {stock:>10} ")
       
 def agregar_producto():
     producto = input("Ingrese el producto en el formato (codigo, nombre, precio, stock): ").strip()
@@ -108,11 +111,11 @@ def ver_carrito():
         if not carrito: print("Carrito vacío"); return
         
         total = 0
-        print("\n--- CARRITO DE COMPRAS --- ")
+        print("\n--- CARRITO DE COMPRAS --- \n")
         for nombre, precio, cantidad in carrito:
             subtotal = precio * cantidad
             total += subtotal
-            print(f"{nombre} x {cantidad} = ${subtotal:.2f}")
+            print(f"{nombre}    x    {cantidad}     = ${subtotal:.2f}")
         print(f"Total: ${total:.2f}")
         
 def finalizar_compra():
